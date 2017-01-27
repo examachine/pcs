@@ -1,0 +1,67 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@// @;
+
+
+1.1
+date	97.06.03.06.37.11;	author exa;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@/*
+** Interface file for Statement class
+**
+** eXa/aNaLoG
+**
+*/
+
+#ifndef Statement_h
+#define Statement_h 1
+
+#include "List.hxx"
+#include "Gen.hxx"
+
+class Label;
+
+class Statement : public Gen
+{
+public:
+  Label *start;
+  Label *end;
+
+  Statement() {}
+  virtual ~Statement() {}
+};
+
+class IfElseStatement : public Statement
+{
+public:
+  Label *if_else;
+
+  IfElseStatement() {}
+  virtual ~IfElseStatement() {}
+};
+
+#endif
+
+
+
+
+
+
+
+
+
+@

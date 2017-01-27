@@ -1,0 +1,10 @@
+{ pascal program for reading and sorting integers 
+  and nothing else... }
+program sort(input, output);
+var a : integer;
+
+begin
+   a := -9999;
+end.
+   
+

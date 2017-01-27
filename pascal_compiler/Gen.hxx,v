@@ -1,0 +1,156 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@// @;
+
+
+1.2
+date	97.06.03.06.35.45;	author exa;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	97.05.29.13.12.56;	author exa;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@Op is a more complete set now
+@
+text
+@/*
+** Interface file for Gen class
+**
+** eXa/aNaLoG
+**
+*/
+
+#ifndef Gen_h
+#define Gen_h 1
+
+#include <iostream.h>
+#include <iomanip.h>
+
+#include "List.hxx"
+class Symbol;
+
+extern char* OpNames[];
+extern Symbol *empty_symbol;
+
+class Quadruple
+{
+public:
+  enum Op { move = 0, movef,
+	    add, sub, mul, div, addf, subf, mulf, divf,
+	    or, and, xor, mod,
+	    neg, negf,
+	    not,
+	    jmp, jeqz, jnez, 
+	    eq, ne, lt, le, gt, ge,
+	    eqf, nef, ltf, lef, gtf, gef,
+	    inttofloat,
+	    context, call, param, paramf, ret, retval,
+	    label, local, localf };
+  Op op;
+  Symbol *arg1, *arg2, *dest;
+  
+  // constructors
+  Quadruple() {}
+  // ** try default values...
+  Quadruple(Op o, Symbol *a1, Symbol *a2, Symbol *d)
+    : op(o), arg1(a1), arg2(a2), dest(d) {
+      if (arg1==0) arg1 = empty_symbol;
+      if (arg2==0) arg2 = empty_symbol;
+      if (dest==0) dest = empty_symbol;
+    }
+  friend ostream& operator <<(ostream& out, Quadruple q);
+};
+
+typedef List<Quadruple> QuadList;
+
+
+// Intermediate Code Generator Class
+class Gen
+{
+  QuadList quad_list;
+
+public:
+
+  Gen() {}
+
+  // generate quadruple
+  void add(Quadruple q) {
+    quad_list.add_tail(q);
+  }
+
+  // join another gen to the end of list
+  void cat(Gen& gen) {
+    quad_list.add_tail(gen.quad_list);
+  }
+
+  // output generated code in somewhat readable form
+  void emit(ostream& out);
+};
+
+#endif
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+** Interface file for intermediate code generator
+d8 2
+a9 4
+#ifndef INTCODEGEN_H
+#define INTCODEGEN_H 1
+
+#include "General.hxx"
+d15 1
+a15 1
+#include "Symbol.hxx"
+a17 5
+
+enum Op {move = 0, add, sub, mul, div, neg, or, and, xor,
+	 jmp, jeq, jne, jlt, jle, jgt, jge,
+	 call, param, label};
+
+d23 11
+d39 1
+d49 1
+a49 7
+inline ostream& operator <<(ostream& out, Quadruple q) {
+  // handle labels seperately
+  out << "\t" << OpNames[(int)q.op] << "(";
+  out << q.arg1->str() << ",";
+  out << q.arg2->str() << ",";
+  out << q.dest->str() << ")" << endl;
+}
+a50 1
+typedef List<Quadruple> QuadList;
+d62 1
+a62 1
+  add(Quadruple q) {
+d67 1
+a67 1
+  cat(Gen& gen) {
+d71 2
+a72 6
+  // output generated code
+  emit(ostream& out) {
+    for (ListTraversal<Quadruple> i = quad_list.beg_head();
+	 i.state(); i.succ())
+      out << quad_list[i];
+  }
+@

@@ -1,0 +1,56 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@// @;
+
+
+1.2
+date	97.06.03.06.46.32;	author exa;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	97.05.17.21.35.29;	author exa;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@what a cool interface! C sucks...
+@
+text
+@/*
+**
+** Interface of lexical and syntax analyzers
+**
+*/
+
+#include <stdio.h>
+
+#include "Context.hxx"
+
+extern int yylex();
+extern FILE *yyin;
+extern int line_number;
+extern int yyparse();
+extern int yydebug;
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 3
+a4 1
+** interface of our lexical and syntax analyzers
+d9 2
+d15 1
+@
