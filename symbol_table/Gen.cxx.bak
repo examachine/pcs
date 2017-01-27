@@ -1,0 +1,22 @@
+/*
+** Implementation file for module
+**
+** eXa/aNaLoG
+**
+*/
+
+#include "Gen.hxx"
+
+Symbol empty_symbol_data("null");
+Symbol *empty_symbol = &empty_symbol_data;
+
+main()
+{
+  Gen g(cout);
+
+  g.add(Quadruple(label, 0, 0, 0));
+  g.add(Quadruple(move, 0, 0, 0));
+  g.emit();
+  cout << endl;
+
+}
