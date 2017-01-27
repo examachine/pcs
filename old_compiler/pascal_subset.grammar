@@ -1,0 +1,285 @@
+/*
+** Bison source for parser module of the compiler
+**
+** exa/AnaLoG
+*/
+
+
+/* C declarations */
+
+%{
+#define YYDEBUG 1
+#include "General.hxx"
+#include <stdio.h>
+#include <iostream.h>
+#include "pascal_subset.hxx"
+
+// current context
+Context *context;// = toplevel;
+
+int yyerror(char *s);
+%}
+
+
+/* Types of tokens */
+
+%union {
+	int		integer;
+	double		floating;
+	Symbol		*symbol;
+	SymbolList	*symbol_list;
+	Type		*type;
+	TypeList	*type_list;
+	Variable	*variable;
+	Constant	*constant;
+	Expression	*expression;
+	ExprList	*expr_list;
+	ConstantExpression *const_expr;
+	Statement	*statement;
+	Context		*context;
+}
+
+
+/* Token Declarations */
+
+/*
+** Delimiters and Seperators 
+** Left Paranthesis, Right Paranthesis, Left Bracket, Right Bracket,
+** COMma, COLon, SemiColon, '.', '..'
+*/
+%token LP RP LB RB COM COL SC DOT DOTDOT
+
+/* Reserved keywords */
+%token PROGRAM VAR ARRAY OF INTEGER REAL FUNCTION PROCEDURE
+%token BLOCK_BEG BLOCK_END IF THEN ELSE WHILE DO
+
+/* Literals */
+%token <integer> L_INT
+%token <floating> L_FLOAT
+
+/* Identifier */
+%token <symbol> ID
+
+/* Operators */
+
+%nonassoc ASSIGN
+%left OR AND XOR NOT
+%left EQ NE LT LE GT GE
+%left ADD SUB
+%left MUL DIV
+%left DIV2 MOD
+%nonassoc UMINUS UPLUS
+
+/* Types of non-terminals */
+
+%type <context> program
+%type <symbol_list> identifier_list
+%type <type> type standart_type
+%type <type_list> parameter parameter_list arguments
+%type <variable> variable;
+%type <const_expr> constant;
+%type <expression> expression;
+%type <expr_list> expression_list;
+%type <statement> statement statement_list
+%type <statement> optional_statements compound_statement;
+%type <statement> if_statement while_statement
+
+%%
+
+/* LALR(1) Grammar together with S-attributed semantic rules */
+
+program: /* entire program */
+	{ $<context>$ = init_toplevel(); }
+	PROGRAM ID LP identifier_list RP SC
+	VAR variable_declarations
+	subprogram_declarations
+	compound_statement
+	DOT
+	{ ($$ = context)->generate_intermediate_code($11); }
+	;
+
+identifier_list:
+	ID
+	{ ($$ = new SymbolList)->add_tail($1); }
+	| identifier_list COM ID
+	{ $1->add_tail($3); $$ = $1; }
+	;
+
+variable_declarations:
+	variable_declarations identifier_list COL type SC
+	{ context->declare_variables(*$2, $4); }
+	|
+	;
+
+type:
+	standart_type { $$ = $1; }
+	| ARRAY LB L_INT DOTDOT L_INT RB OF standart_type
+	{ $$ = NULL; }
+	;
+
+standart_type:
+	INTEGER { $$ = new IntegerType; }
+	| REAL  { $$ = new RealType; }
+	;
+
+subprogram_declarations:
+	subprogram_declarations subprogram_declaration
+	|
+	;
+
+subprogram_declaration:
+	subprogram_head
+	variable_declarations
+	compound_statement
+	SC
+	;
+
+subprogram_head:
+	FUNCTION ID arguments COL standart_type SC
+	| PROCEDURE ID arguments SC
+	;
+		
+arguments:
+	LP parameter_list RP { $$ = $2; }
+	| { $$ = new TypeList; }
+	;
+
+parameter_list:
+	parameter
+	{ $$ = $1; }
+	| parameter_list SC parameter
+	{ $1->add_tail(*$3); $$ = $1; }
+	;
+
+parameter:
+	identifier_list COL type
+	{ $$ = make_parameter(*$1, $3); }
+	;
+
+compound_statement:
+	BLOCK_BEG optional_statements BLOCK_END
+	{ $$ = $2; }
+	;
+
+optional_statements:
+	statement_list
+	{ $$ = $1; }
+	|
+	{ $$ = new Statement; }
+	;
+
+statement_list:
+	statement { $$ = $1; }
+	| statement_list SC statement
+	{ $1->cat(*$3); $$=$1; }
+	;
+
+statement:
+	variable ASSIGN expression
+	{ $$ = context->assign($1, $3); }
+	| procedure_statement {}
+	| compound_statement { $$ = $1; }
+	| if_statement { $$ = $1; }
+	| while_statement {}
+	;
+
+if_statement:
+	IF expression THEN statement ELSE statement
+	{ $$ = context->if_else($2, $4, $6); }
+	;
+
+while_statement:
+	WHILE expression DO statement
+	{ $$ = context->while_stmt($2, $4); }
+	;
+
+procedure_statement:
+	ID {}
+	| ID LP expression_list RP {}
+	;
+
+expression_list:
+	expression
+	{ ($$ = new ExprList)->add_tail($1); }
+	| expression_list COM expression
+	{ $1->add_tail($3); $$ = $1; }
+	;
+
+/* expressions are variables with code generation capabilites */
+expression:
+	variable
+	{ $$ = (Expression*)context->get_varexpr($1); }
+
+	| constant
+	{ $$ = (Expression*)$1; }
+
+	| ID LP expression_list RP
+	{ $$ = 0; }
+
+	| expression EQ expression
+	{ $$ = context->eqop($1, $3); }
+	| expression NE expression
+	{ $$ = context->neop($1, $3); }
+	| expression LT expression
+	{ $$ = context->ltop($1, $3); }
+	| expression LE expression
+	{ $$ = context->leop($1, $3); }
+	| expression GT expression
+	{ $$ = context->gtop($1, $3); }
+	| expression GE expression
+	{ $$ = context->geop($1, $3); }
+
+	| expression ADD expression
+	{ $$ = context->addop($1, $3); }
+	| expression SUB expression
+	{ $$ = context->subop($1, $3); }
+	| expression MUL expression
+	{ $$ = context->mulop($1, $3); }
+	| expression DIV expression
+	{ $$ = context->divop($1, $3); }
+
+	| expression AND expression
+	{ $$ = context->andop($1, $3); }
+	| expression OR expression
+	{ $$ = context->orop($1, $3); }
+	| expression XOR expression
+	{ $$ = context->xorop($1, $3); }
+	| expression DIV2 expression
+	{ $$ = context->div2op($1, $3); }
+	| expression MOD expression
+	{ $$ = context->modop($1, $3); }
+
+	| ADD expression %prec UPLUS
+	{ $$ = $2; }
+	| SUB expression %prec UMINUS
+	{ $$ = context->negop($2); }
+	| NOT expression
+	{ $$ = context->notop($2); }
+
+	| LP expression RP
+	{ $$ = $2; }
+	;
+
+variable:
+	ID
+	{ $$ = context->variable_ref($1); }
+	| ID LB expression RB
+	{ $$ = 0; }
+	;
+
+constant:
+	L_INT
+	{ $$ = context->get_constexpr($1); }
+	| L_FLOAT
+	{ $$ = context->get_constexpr($1); }
+	;
+
+/* End of Grammar */
+
+%%
+
+int yyerror(char *s)
+{
+  cerr << s << endl;
+}
+

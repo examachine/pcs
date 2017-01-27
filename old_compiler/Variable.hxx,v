@@ -1,0 +1,126 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@// @;
+
+
+1.2
+date	97.06.03.06.44.56;	author exa;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	97.05.29.17.31.59;	author exa;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.2
+log
+@constructors!
+@
+text
+@/*
+** Interface file for Variable class
+**
+** eXa/aNaLoG
+**
+*/
+
+
+#ifndef Variable_h
+#define Variable_h 1
+
+#include "TypedSymbol.hxx"
+
+// Variable has name, type, address attributes
+class Variable : virtual public TypedSymbol
+{
+protected:
+  Variable() {}
+public:
+  int offset; 
+
+  Variable(String n, Type *t, int o)
+    //: TypedSymbol(n, t), offset(o) {} // g++ bug
+    {
+      name = n;
+      type = t;
+      offset = o;
+    }
+
+  virtual ~Variable() {}
+
+};
+
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d2 1
+a2 1
+** Interface file for
+d8 1
+d12 1
+a12 1
+#include "Symbol.hxx"
+d15 1
+a15 1
+class Variable : public Symbol
+d17 2
+a19 1
+  Type *type;
+d23 7
+a29 1
+    : Symbol(n), type(t), offset(o) {}
+d31 1
+d35 1
+a35 6
+// A Constant is a Variable whose value is statically bound
+class Constant : public Variable
+{
+public:
+  void *value;
+  String s;
+a36 2
+  Constant(int n, Type *t, int o, void* v)
+    : Variable(String('!') + String(n), t, o), value(v) {}
+a37 1
+  ~Constant() { delete value; }
+a38 12
+  String& str() {
+    void *val=value;
+    s = "0x";
+    for (int i = 0; i < type->storage(); i++, val++) {
+      char c = *((char*)val) + '0';
+      s += String(c);
+    }
+    return s;
+  }
+};
+
+#endif
+@

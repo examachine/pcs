@@ -1,0 +1,379 @@
+head	1.6;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.6
+date	97.07.10.18.00.33;	author exa;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	97.06.03.06.50.08;	author exa;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	97.06.03.06.49.22;	author exa;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	97.05.31.16.37.01;	author exa;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	97.05.29.13.14.55;	author exa;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	97.05.17.21.33.15;	author exa;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.6
+log
+@cosmetic changes
+@
+text
+@#
+# CS416 Compiler Design
+#
+# Project: simple compiler for a subset of pascal source language
+# which produces intermediate code as quadruples.
+#
+# makefile for g++
+#
+# by eXa/aNaLoG
+#
+
+SHELL = /bin/sh
+
+.SUFFIXES:
+
+PROJECT = pascal_compiler
+
+srcdir = .
+curdir := $(shell pwd)
+parentdir := $(shell cd ..;pwd)
+dirname := $(subst $(parentdir)/,,$(curdir))
+
+# Project files
+
+EXEC = project
+OBJS = main.o pascal_subset.flex.o pascal_subset.tab.o      \
+       Context.o Type.o Constant.o Gen.o                    \
+       StringPtr.SymbolPtr.Map.o StringPtr.SymbolPtr.VHMap.o
+CXXFILES = main.cxx Context.cxx Type.cxx Constant.cxx Gen.cxx
+CCFILES =  StringPtr.SymbolPtr.Map.cc StringPtr.SymbolPtr.VHMap.cc
+CFILES =   pascal_subset.flex.c pascal_subset.tab.c
+INCFILES = General.hxx main.hxx pascal_subset.hxx           \
+           Type.hxx Symbol.hxx TypedSymbol.hxx  Label.hxx   \
+           Variable.hxx Constant.hxx Expression.hxx         \
+           Statement.hxx Gen.hxx Context.hxx                \
+           List.hxx SymbolTable.hxx StringPtr.h SymbolPtr.h
+AFILES =
+GRAMMARFILES = pascal_subset.grammar
+LEXFILES = pascal_subset.flex
+LIBS = -lfl
+
+IMPLEMENTATION = $(CXXFILES) $(AFILES) $(GRAMMARFILES) $(LEXFILES)
+INTERFACE = $(INCFILES)
+SRC = $(IMPLEMENTATION) $(INCFILES)
+#VER = $(addprefix $(SRC), ,v)
+AUX = Makefile test.pas test2.pas test3.pas
+ARCHIVE = $(PROJECT).lzh
+ARCPATH = ~exa/arc
+
+INCLUDEDIR =
+LIBDIR =
+PROG = -o $(EXEC)
+
+# Options
+
+CXXOPTIMISE =
+CXXDEBUG = -g
+CPPFLAGS =
+CXXFLAGS = $(CXXDEBUG) $(CXXOPTIMISE) -frtti -DUSE_LIBGXX_INLINE
+ASFLAGS =
+LDFLAGS = $(CXXDEBUG)
+
+# Programs used
+
+MAKE =	make
+CC =	gcc
+CXX =	g++
+ASM =	as
+BISON =	bison --defines
+FLEX =	flex
+LS =	ls -l
+CP =    cp --interactive
+ED =	emacs
+
+# Rules
+
+# Pattern Rules
+
+# Automatic dependency rules
+
+%.d: %.cxx
+	@@echo Generating dependencies for $*.cxx
+	@@$(SHELL) -ec '$(CXX) -MM $(CPPFLAGS) $< \
+                 | sed '\''s/$*\\.o[ :]*/& $@@/g'\'' > $@@'
+%.d: %.cc
+	@@echo Generating dependencies for $*.cc
+	@@$(SHELL) -ec '$(CXX) -MM $(CPPFLAGS) $< \
+                 | sed '\''s/$*\\.o[ :]*/& $@@/g'\'' > $@@'
+%.d: %.c
+	@@echo Generating dependencies for $*.c
+	@@$(SHELL) -ec '$(CXX) -MM $(CPPFLAGS) $< \
+                 | sed '\''s/$*\\.o[ :]*/& $@@/g'\'' > $@@'
+
+# Compilation rules
+
+%.o : %.cxx
+	@@echo Compiling $<
+	@@$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@@
+
+%.o : %.cc
+	@@echo Compiling $<
+	@@$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@@
+
+%.o : %.c
+	@@echo Compiling $<
+	@@$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@@
+
+# Flex - Bison rules
+
+%.tab.c %.tab.h : %.grammar %.hxx
+	$(BISON) $< --output-file=$*.tab.c
+
+%.flex.c : %.flex %.tab.h %.hxx
+	$(FLEX) -o$@@ $<
+
+
+.PHONY: all compileinfo clean realclean list listsrc listarc extractarc
+
+# Default rule
+
+all: compileinfo $(EXEC)
+
+compileinfo:
+	@@echo C++ flags: $(CXXFLAGS)
+	@@echo C preprocessor flags: $(CPPFLAGS)
+
+$(EXEC): $(OBJS)
+	@@echo Building executable: $(EXEC)
+	@@echo LD flags: $(LDFLAGS)
+	@@echo Libraries used: $(LIBS)
+	@@$(CXX) $(LDFLAGS) $(LIBDIR) $(INCLUDEDIR) $(OBJS) $(LIBS) $(PROG)
+
+# Include automatic dependencies
+include $(CXXFILES:.cxx=.d)
+include $(CCFILES:.cc=.d)
+include $(CFILES:.c=.d)
+
+# symbol table created with g++ proto features
+
+StringPtr.h: SymbolPtr.h
+StringPtr.defs.h: StringPtr.h
+	genclass StringPtr val defs
+	cat StringPtr.h StringPtr.defs.h >cat.tmp
+	rm StringPtr.defs.h
+	mv cat.tmp StringPtr.defs.h
+
+SymbolPtr.h: Symbol.hxx
+SymbolPtr.defs.h: SymbolPtr.h
+	genclass SymbolPtr val defs
+	cat SymbolPtr.h SymbolPtr.defs.h >cat.tmp
+	rm SymbolPtr.defs.h
+	mv cat.tmp SymbolPtr.defs.h
+
+StringPtr.SymbolPtr.Map.cc StringPtr.SymbolPtr.Map.h: \
+  StringPtr.defs.h SymbolPtr.defs.h
+	genclass -2 StringPtr val SymbolPtr val Map
+
+StringPtr.SymbolPtr.VHMap.cc StringPtr.SymbolPtr.VHMap.h: \
+  StringPtr.defs.h SymbolPtr.defs.h                       \
+  StringPtr.SymbolPtr.Map.cc StringPtr.SymbolPtr.Map.h
+	genclass -2 StringPtr val SymbolPtr val VHMap
+
+StringPtr.SymbolPtr.Map.o: StringPtr.SymbolPtr.Map.cc StringPtr.SymbolPtr.Map.h
+StringPtr.SymbolPtr.VHMap.o: StringPtr.SymbolPtr.VHMap.cc StringPtr.SymbolPtr.VHMap.h
+
+clean:
+	-rm $(OBJS)
+
+realclean:
+	-rm $(OBJS) $(EXEC) $(ARCHIVE) *.bak *~
+
+list:
+	$(LS) $(SRC) $(AUX)
+
+listsrc:
+	$(LS) $(SRC)
+
+# Archive
+
+arc:	$(ARCHIVE)
+
+listarc:
+	lha l $(ARCHIVE) 
+
+extractarc:
+	cd .. ;\
+	lha x $(dirname)/$(ARCHIVE)
+
+$(ARCHIVE): $(SRC) $(VER) $(AUX)
+	cd .. ;\
+	lha u $(dirname)/$(ARCHIVE) $(addprefix $(dirname)/,$?)
+
+backup:
+	$(CP) $(ARCHIVE) $(ARCPATH)/$(ARCHIVE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+@
+
+
+1.5
+log
+@test programs added
+@
+text
+@d97 2
+a98 1
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@@
+d101 2
+a102 1
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@@
+d105 2
+a106 1
+	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) $< -o $@@
+d117 1
+a117 1
+.PHONY: all clean realclean list listsrc listarc extractarc
+d121 5
+a125 1
+all:   $(EXEC)
+d129 3
+a131 1
+	$(CXX) $(LDFLAGS) $(LIBDIR) $(INCLUDEDIR) $(OBJS) $(LIBS) $(PROG)
+@
+
+
+1.4
+log
+@well...
+@
+text
+@d46 1
+a46 1
+AUX = Makefile
+@
+
+
+1.3
+log
+@replaced primitive dependency rules with automatic dependencies
+this seems to work better when you have a multitude of class sources
+@
+text
+@d82 2
+a83 1
+	$(SHELL) -ec '$(CXX) -MM $(CPPFLAGS) $< \
+d86 2
+a87 1
+	$(SHELL) -ec '$(CXX) -MM $(CPPFLAGS) $< \
+d90 2
+a91 1
+	$(SHELL) -ec '$(CXX) -MM $(CPPFLAGS) $< \
+@
+
+
+1.2
+log
+@added symbol table and generator files
+@
+text
+@d26 2
+a27 2
+OBJS = main.o pascal_subset.flex.o pascal_subset.tab.o \
+       Context.o Gen.o\
+d29 7
+a35 3
+CXXFILES = main.cxx Context.cxx
+INCFILES = main.hxx pascal_subset.hxx \
+           General.hxx Symbol.hxx Context.hxx \
+d42 3
+a44 1
+SRC = $(CXXFILES) $(INCFILES) $(AFILES) $(GRAMMARFILES) $(LEXFILES)
+d79 14
+d102 3
+a104 1
+%.tab.c %.tab.h : %.grammar
+d107 1
+a107 1
+%.flex.c : %.flex %.tab.h
+d121 4
+a124 9
+# dependencies
+
+$(OBJS): General.hxx
+
+main.o: main.cxx main.hxx pascal_subset.tab.h
+pascal_subset.flex.o: pascal_subset.flex.c pascal_subset.hxx
+pascal_subset.tab.o: pascal_subset.tab.c pascal_subset.hxx
+Context.o: Context.cxx Context.hxx
+Gen.o: Gen.cxx Gen.hxx
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d5 1
+a5 1
+# which produces intermediate code as quadruples (3-address code)
+d26 7
+a32 3
+OBJS = main.o pascal_subset.flex.o pascal_subset.tab.o
+CXXFILES = main.cxx
+INCFILES =
+d39 1
+d42 1
+d53 1
+a53 1
+CXXFLAGS = $(CXXDEBUG) $(CXXOPTIMISE) -DUSE_LIBGXX_INLINE
+d66 1
+d76 3
+d101 2
+d106 30
+d160 1
+a160 1
+$(ARCHIVE): $(SRC) $(AUX)
+d165 1
+a165 1
+	$(CP) $(ARCHIVE) $(BACKUPPATH)
+@
