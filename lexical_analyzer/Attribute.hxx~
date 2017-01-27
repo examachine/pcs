@@ -1,0 +1,24 @@
+/*
+** Interface file for Attributemodule
+**
+**
+**
+** exa
+**
+*/
+
+#ifndef Attribute_Interface
+#define Attribute_Interface 1
+
+#include "General.hxx"
+
+#endif
+
+
+
+
+
+
+
+
+
